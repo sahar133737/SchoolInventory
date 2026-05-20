@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Windows.Forms;
+using WindowsFormsApp1.Models;
 using WindowsFormsApp1.Utils;
 
 namespace WindowsFormsApp1
@@ -12,8 +15,7 @@ namespace WindowsFormsApp1
         
         public DbController()
         {
-            // Используем модуль конфигурации для получения строки подключения
-            connectionString = Utils.AppConfig.GetConnectionString();
+            connectionString = AppConfig.ConnectionString;
         }
         
         public DbController(string connectionString)
@@ -112,11 +114,7 @@ namespace WindowsFormsApp1
     {
         private DbController db = new DbController();
 
-        public DataTable GetAllInventory()
-        {
-            try
-            {
-                string query = @"SELECT i.InventoryID, i.ItemName, i.Description, c.CategoryName, 
+        private const string InventorySelectCore = @"SELECT i.InventoryID, i.ItemName, i.Description, c.CategoryName, 
                                 r.RoomNumber + ' - ' + r.RoomName as Classroom,
                                 p.FirstName + ' ' + p.LastName as ResponsiblePerson,
                                 i.InventoryNumber, i.PurchaseDate, i.PurchasePrice, 
@@ -125,7 +123,16 @@ namespace WindowsFormsApp1
                                 LEFT JOIN Categories c ON i.CategoryID = c.CategoryID
                                 LEFT JOIN Classrooms r ON i.ClassroomID = r.ClassroomID
                                 LEFT JOIN ResponsiblePersons p ON i.ResponsiblePersonID = p.PersonID";
-                return db.GetData(query);
+
+        public DataTable GetAllInventory() => GetFilteredInventory(null);
+
+        public DataTable GetFilteredInventory(InventoryFilterCriteria criteria)
+        {
+            try
+            {
+                string where = BuildFilterWhere(criteria, "i");
+                string query = InventorySelectCore + where + " ORDER BY i.ItemName";
+                return db.GetData(query, BuildFilterParameters(criteria));
             }
             catch (Exception ex)
             {
@@ -273,6 +280,64 @@ namespace WindowsFormsApp1
                 Logger.Error($"Ошибка удаления инвентаря (ID: {inventoryId})", ex);
                 throw new Exception($"Не удалось удалить запись. ID: {inventoryId}", ex);
             }
+        }
+
+        public string[] GetDistinctStates()
+        {
+            try
+            {
+                var dt = db.GetData(@"SELECT DISTINCT CurrentState FROM Inventory 
+                    WHERE CurrentState IS NOT NULL AND LTRIM(RTRIM(CurrentState)) <> '' ORDER BY CurrentState");
+                return dt.AsEnumerable().Select(r => r.Field<string>("CurrentState")).ToArray();
+            }
+            catch { return new string[0]; }
+        }
+
+        public string[] GetDistinctStatuses()
+        {
+            try
+            {
+                var dt = db.GetData(@"SELECT DISTINCT Status FROM Inventory 
+                    WHERE Status IS NOT NULL AND LTRIM(RTRIM(Status)) <> '' ORDER BY Status");
+                return dt.AsEnumerable().Select(r => r.Field<string>("Status")).ToArray();
+            }
+            catch { return new string[0]; }
+        }
+
+        private static string BuildFilterWhere(InventoryFilterCriteria filter, string alias)
+        {
+            if (filter == null || !filter.HasActiveFilters) return string.Empty;
+            var parts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(filter.SearchText))
+                parts.Add($"({alias}.ItemName LIKE @Search OR {alias}.Description LIKE @Search OR {alias}.InventoryNumber LIKE @Search)");
+            if (filter.CategoryId.HasValue) parts.Add($"{alias}.CategoryID = @CategoryId");
+            if (filter.ClassroomId.HasValue) parts.Add($"{alias}.ClassroomID = @ClassroomId");
+            if (filter.ResponsiblePersonId.HasValue) parts.Add($"{alias}.ResponsiblePersonID = @ResponsiblePersonId");
+            if (!string.IsNullOrWhiteSpace(filter.CurrentState)) parts.Add($"{alias}.CurrentState = @CurrentState");
+            if (!string.IsNullOrWhiteSpace(filter.Status)) parts.Add($"{alias}.Status = @Status");
+            if (filter.DateFrom.HasValue) parts.Add($"{alias}.PurchaseDate >= @DateFrom");
+            if (filter.DateTo.HasValue) parts.Add($"{alias}.PurchaseDate <= @DateTo");
+            if (filter.PriceFrom.HasValue) parts.Add($"{alias}.PurchasePrice >= @PriceFrom");
+            if (filter.PriceTo.HasValue) parts.Add($"{alias}.PurchasePrice <= @PriceTo");
+            return parts.Count > 0 ? " WHERE " + string.Join(" AND ", parts) : string.Empty;
+        }
+
+        private static SqlParameter[] BuildFilterParameters(InventoryFilterCriteria filter)
+        {
+            if (filter == null || !filter.HasActiveFilters) return null;
+            var list = new List<SqlParameter>();
+            if (!string.IsNullOrWhiteSpace(filter.SearchText))
+                list.Add(new SqlParameter("@Search", "%" + filter.SearchText.Trim() + "%"));
+            if (filter.CategoryId.HasValue) list.Add(new SqlParameter("@CategoryId", filter.CategoryId.Value));
+            if (filter.ClassroomId.HasValue) list.Add(new SqlParameter("@ClassroomId", filter.ClassroomId.Value));
+            if (filter.ResponsiblePersonId.HasValue) list.Add(new SqlParameter("@ResponsiblePersonId", filter.ResponsiblePersonId.Value));
+            if (!string.IsNullOrWhiteSpace(filter.CurrentState)) list.Add(new SqlParameter("@CurrentState", filter.CurrentState));
+            if (!string.IsNullOrWhiteSpace(filter.Status)) list.Add(new SqlParameter("@Status", filter.Status));
+            if (filter.DateFrom.HasValue) list.Add(new SqlParameter("@DateFrom", filter.DateFrom.Value.Date));
+            if (filter.DateTo.HasValue) list.Add(new SqlParameter("@DateTo", filter.DateTo.Value.Date));
+            if (filter.PriceFrom.HasValue) list.Add(new SqlParameter("@PriceFrom", filter.PriceFrom.Value));
+            if (filter.PriceTo.HasValue) list.Add(new SqlParameter("@PriceTo", filter.PriceTo.Value));
+            return list.Count > 0 ? list.ToArray() : null;
         }
     }
 

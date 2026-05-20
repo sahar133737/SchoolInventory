@@ -204,6 +204,57 @@ BEGIN
 END
 GO
 
+-- Таблица: MovementTypes (Типы операций движения)
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[MovementTypes]') AND type in (N'U'))
+BEGIN
+    CREATE TABLE [dbo].[MovementTypes] (
+        [TypeID] INT IDENTITY(1,1) PRIMARY KEY,
+        [TypeName] NVARCHAR(100) NOT NULL UNIQUE
+    );
+    INSERT INTO MovementTypes (TypeName) VALUES
+        (N'Выдача'), (N'Возврат'), (N'Перемещение'), (N'Закрепление за МОЛ'), (N'Списание');
+    PRINT 'Таблица MovementTypes создана.';
+END
+GO
+
+-- Таблица: Movements (Движения имущества)
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Movements]') AND type in (N'U'))
+BEGIN
+    CREATE TABLE [dbo].[Movements] (
+        [MovementID] INT IDENTITY(1,1) PRIMARY KEY,
+        [InventoryID] INT NOT NULL,
+        [TypeID] INT NOT NULL,
+        [FromClassroomID] INT NULL,
+        [ToClassroomID] INT NULL,
+        [FromPersonID] INT NULL,
+        [ToPersonID] INT NULL,
+        [MovementDate] DATETIME NOT NULL DEFAULT GETDATE(),
+        [DocumentNumber] NVARCHAR(50) NULL,
+        [Reason] NVARCHAR(500) NULL,
+        [PerformedBy] NVARCHAR(100) NULL,
+        [CreatedDate] DATETIME NOT NULL DEFAULT GETDATE(),
+        CONSTRAINT [FK_Movements_Inventory] FOREIGN KEY ([InventoryID]) REFERENCES [dbo].[Inventory]([InventoryID]),
+        CONSTRAINT [FK_Movements_Type] FOREIGN KEY ([TypeID]) REFERENCES [dbo].[MovementTypes]([TypeID])
+    );
+    CREATE INDEX [IX_Movements_MovementDate] ON [dbo].[Movements]([MovementDate]);
+    CREATE INDEX [IX_Movements_InventoryID] ON [dbo].[Movements]([InventoryID]);
+    PRINT 'Таблица Movements создана.';
+END
+GO
+
+-- Таблица: RolePermissions (Права ролей)
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[RolePermissions]') AND type in (N'U'))
+BEGIN
+    CREATE TABLE [dbo].[RolePermissions] (
+        [RoleCode] NVARCHAR(50) NOT NULL,
+        [PermissionCode] NVARCHAR(80) NOT NULL,
+        [IsGranted] BIT NOT NULL CONSTRAINT [DF_RolePermissions_IsGranted] DEFAULT (1),
+        CONSTRAINT [PK_RolePermissions] PRIMARY KEY ([RoleCode], [PermissionCode])
+    );
+    PRINT 'Таблица RolePermissions создана.';
+END
+GO
+
 PRINT '=============================================';
 PRINT 'Структура базы данных успешно создана!';
 PRINT '=============================================';

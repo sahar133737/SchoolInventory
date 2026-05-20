@@ -24,7 +24,7 @@
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>1</ApplicationRevision>
-    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <ApplicationVersion>2.0.0.0</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <PublishWizardCompleted>true</PublishWizardCompleted>
     <BootstrapperEnabled>true</BootstrapperEnabled>
@@ -49,18 +49,15 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>8C214DFD21317541110EB9F2ED1AEF3860DEB844</ManifestCertificateThumbprint>
+    <GenerateManifests>false</GenerateManifests>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>WindowsFormsApp1_TemporaryKey.pfx</ManifestKeyFile>
-  </PropertyGroup>
-  <PropertyGroup>
-    <GenerateManifests>true</GenerateManifests>
-  </PropertyGroup>
-  <PropertyGroup>
-    <SignManifests>true</SignManifests>
+    <SignManifests>false</SignManifests>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="PdfSharp">
+      <HintPath>packages\PDFsharp.1.50.5147\lib\net20\PdfSharp.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
@@ -76,10 +73,57 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DbController.cs" />
+    <Compile Include="Export\PdfReportExporter.cs" />
+    <Compile Include="Models\AppPermission.cs" />
+    <Compile Include="Models\InventoryFilterCriteria.cs" />
+    <Compile Include="Models\ReportResult.cs" />
+    <Compile Include="Services\PermissionService.cs" />
+    <Compile Include="Services\ReportService.cs" />
+    <Compile Include="Services\MovementManager.cs" />
+    <Compile Include="RolePermissionsForm.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ClassroomsForm.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ResponsiblePersonsForm.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="SystemLogForm.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Admin\ReferenceDataControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="MovementsForm.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="MovementAddDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="UI\AppTheme.cs" />
+    <Compile Include="UI\GridHelper.cs" />
+    <Compile Include="UI\InventoryFilterPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\ToolbarPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="UI\PeriodFilterPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UI\ActionButtonRow.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Utils\AppConfig.cs" />
     <Compile Include="Utils\Logger.cs" />
     <Compile Include="Utils\TestDataGenerator.cs" />
     <Compile Include="Utils\ValidationHelper.cs" />
+    <Compile Include="Utils\ComboBoxHelper.cs" />
+    <Compile Include="Utils\AuthorizationHelper.cs" />
+    <Compile Include="Utils\InputMaskHelper.cs" />
+    <Compile Include="Utils\ExceptionHandler.cs" />
+    <Compile Include="Utils\DispositionValidator.cs" />
     <Compile Include="TestDataForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -89,10 +133,10 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
-    <Compile Include="InventoryDialog1.cs">
+    <Compile Include="InventoryAddDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="InventoryEditDialog1.cs">
+    <Compile Include="InventoryEditDialog.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="LoginForm.cs">
@@ -135,7 +179,6 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <None Include="WindowsFormsApp1_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

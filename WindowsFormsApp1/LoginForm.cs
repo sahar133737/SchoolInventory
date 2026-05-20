@@ -4,6 +4,8 @@ using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
+using WindowsFormsApp1.UI;
+
 namespace WindowsFormsApp1
 {
     public partial class LoginForm : Form
@@ -240,6 +242,9 @@ namespace WindowsFormsApp1
             this.Controls.Add(this.panelMain);
             this.Controls.Add(this.headerPanel);
             this.ResumeLayout(false);
+            AppTheme.ApplyToForm(this);
+            AppTheme.ApplyToButton(btnLogin, true);
+            AppTheme.ApplyToButton(btnCancel);
         }
 
         private Button btnClose;

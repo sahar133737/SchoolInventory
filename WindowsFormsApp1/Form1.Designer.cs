@@ -30,6 +30,7 @@
         {
             this.tabMain = new System.Windows.Forms.TabControl();
             this.tabInventory = new System.Windows.Forms.TabPage();
+            this.tabAssetDisposition = new System.Windows.Forms.TabPage();
             this.tabReports = new System.Windows.Forms.TabPage();
             this.tabStatistics = new System.Windows.Forms.TabPage();
             this.tabUsers = new System.Windows.Forms.TabPage();
@@ -54,6 +55,7 @@
             // tabMain
             // 
             this.tabMain.Controls.Add(this.tabInventory);
+            this.tabMain.Controls.Add(this.tabAssetDisposition);
             this.tabMain.Controls.Add(this.tabReports);
             this.tabMain.Controls.Add(this.tabStatistics);
             this.tabMain.Controls.Add(this.tabUsers);
@@ -85,13 +87,23 @@
             this.tabInventory.Text = "📦 Инвентарь";
             this.tabInventory.UseVisualStyleBackColor = true;
             // 
+            // tabAssetDisposition
+            // 
+            this.tabAssetDisposition.Location = new System.Drawing.Point(4, 29);
+            this.tabAssetDisposition.Name = "tabAssetDisposition";
+            this.tabAssetDisposition.Padding = new System.Windows.Forms.Padding(3);
+            this.tabAssetDisposition.Size = new System.Drawing.Size(1092, 617);
+            this.tabAssetDisposition.TabIndex = 1;
+            this.tabAssetDisposition.Text = "📋 Распоряжение";
+            this.tabAssetDisposition.UseVisualStyleBackColor = true;
+            // 
             // tabReports
             // 
             this.tabReports.Location = new System.Drawing.Point(4, 29);
             this.tabReports.Name = "tabReports";
             this.tabReports.Padding = new System.Windows.Forms.Padding(3);
             this.tabReports.Size = new System.Drawing.Size(1092, 617);
-            this.tabReports.TabIndex = 1;
+            this.tabReports.TabIndex = 2;
             this.tabReports.Text = "📊 Отчеты";
             this.tabReports.UseVisualStyleBackColor = true;
             // 
@@ -101,7 +113,7 @@
             this.tabStatistics.Name = "tabStatistics";
             this.tabStatistics.Padding = new System.Windows.Forms.Padding(3);
             this.tabStatistics.Size = new System.Drawing.Size(1092, 617);
-            this.tabStatistics.TabIndex = 2;
+            this.tabStatistics.TabIndex = 3;
             this.tabStatistics.Text = "📈 Статистика";
             this.tabStatistics.UseVisualStyleBackColor = true;
             // 
@@ -111,7 +123,7 @@
             this.tabUsers.Name = "tabUsers";
             this.tabUsers.Padding = new System.Windows.Forms.Padding(3);
             this.tabUsers.Size = new System.Drawing.Size(1092, 617);
-            this.tabUsers.TabIndex = 3;
+            this.tabUsers.TabIndex = 4;
             this.tabUsers.Text = "👥 Пользователи";
             this.tabUsers.UseVisualStyleBackColor = true;
             // 
@@ -121,7 +133,7 @@
             this.tabCategories.Name = "tabCategories";
             this.tabCategories.Padding = new System.Windows.Forms.Padding(3);
             this.tabCategories.Size = new System.Drawing.Size(1092, 617);
-            this.tabCategories.TabIndex = 4;
+            this.tabCategories.TabIndex = 5;
             this.tabCategories.Text = "📁 Категории";
             this.tabCategories.UseVisualStyleBackColor = true;
             // 
@@ -274,6 +286,7 @@
 
         private System.Windows.Forms.TabControl tabMain;
         private System.Windows.Forms.TabPage tabInventory;
+        private System.Windows.Forms.TabPage tabAssetDisposition;
         private System.Windows.Forms.TabPage tabReports;
         private System.Windows.Forms.TabPage tabStatistics;
         private System.Windows.Forms.TabPage tabUsers;

@@ -24,6 +24,7 @@ namespace WindowsFormsApp1
                 
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
+                ExceptionHandler.AttachGlobalHandlers();
                 
                 // Показываем форму авторизации
                 using (LoginForm loginForm = new LoginForm())
@@ -31,7 +32,8 @@ namespace WindowsFormsApp1
                     if (loginForm.ShowDialog() == DialogResult.OK)
                     {
                         Logger.Info($"Успешная авторизация пользователя: {loginForm.LoggedInFullName} ({loginForm.LoggedInRole})");
-                        // Если авторизация успешна, показываем главную форму
+                        Services.PermissionService.Instance.EnsureSchema();
+                        Services.PermissionService.Instance.Reload();
                         Application.Run(new Form1(loginForm.LoggedInUsername, loginForm.LoggedInFullName, loginForm.LoggedInRole));
                     }
                     else

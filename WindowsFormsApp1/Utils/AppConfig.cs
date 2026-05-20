@@ -1,63 +1,28 @@
-using System;
 using System.Configuration;
 
 namespace WindowsFormsApp1.Utils
 {
-    /// <summary>
-    /// Модуль конфигурации приложения
-    /// </summary>
     public static class AppConfig
     {
-        /// <summary>
-        /// Получить строку подключения к базе данных
-        /// </summary>
-        public static string GetConnectionString()
-        {
-            string connectionString = ConfigurationManager.ConnectionStrings["DefaultConnection"]?.ConnectionString;
-            
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                // Значение по умолчанию
-                return @"Server=SAHAR\SQLSERVER;Database=SchoolInventoryDB;Integrated Security=true;";
-            }
-            
-            return connectionString;
-        }
+        public static string ConnectionString =>
+            ConfigurationManager.ConnectionStrings["DefaultConnection"]?.ConnectionString
+            ?? @"Server=.\SQLEXPRESS;Database=SchoolInventoryDB;Integrated Security=true;";
 
-        /// <summary>
-        /// Получить настройку из конфигурации
-        /// </summary>
-        public static string GetSetting(string key, string defaultValue = "")
-        {
-            string value = ConfigurationManager.AppSettings[key];
-            return string.IsNullOrEmpty(value) ? defaultValue : value;
-        }
+        public static string GetSetting(string key, string defaultValue = "") =>
+            string.IsNullOrEmpty(ConfigurationManager.AppSettings[key])
+                ? defaultValue
+                : ConfigurationManager.AppSettings[key];
 
-        /// <summary>
-        /// Получить настройку как булево значение
-        /// </summary>
-        public static bool GetBoolSetting(string key, bool defaultValue = false)
-        {
-            string value = GetSetting(key);
-            if (bool.TryParse(value, out bool result))
-            {
-                return result;
-            }
-            return defaultValue;
-        }
+        public static bool GetBoolSetting(string key, bool defaultValue = false) =>
+            bool.TryParse(GetSetting(key), out bool r) ? r : defaultValue;
 
-        /// <summary>
-        /// Получить настройку как целое число
-        /// </summary>
-        public static int GetIntSetting(string key, int defaultValue = 0)
-        {
-            string value = GetSetting(key);
-            if (int.TryParse(value, out int result))
-            {
-                return result;
-            }
-            return defaultValue;
-        }
+        public static int GetIntSetting(string key, int defaultValue = 0) =>
+            int.TryParse(GetSetting(key), out int r) ? r : defaultValue;
+
+        public static string OrganizationName => GetSetting("OrganizationName", "МБОУ «Средняя общеобразовательная школа»");
+        public static string OrganizationAddress => GetSetting("OrganizationAddress", "г. Брянск");
+        public static string OrganizationDepartment => GetSetting("OrganizationDepartment", "Администрация / Хозяйственная часть");
+        public static string ReportPreparedByTitle => GetSetting("ReportPreparedByTitle", "Заведующий хозяйством");
+        public static string ReportApprovedByTitle => GetSetting("ReportApprovedByTitle", "Директор");
     }
 }
-

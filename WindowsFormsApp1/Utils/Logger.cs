@@ -1,58 +1,45 @@
 using System;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Text;
 using System.Windows.Forms;
 
 namespace WindowsFormsApp1.Utils
 {
     /// <summary>
-    /// Модуль логирования
+    /// Модуль логирования в файлы Logs/log_yyyyMMdd.txt
     /// </summary>
     public static class Logger
     {
+        private static readonly object Sync = new object();
         private static readonly string LogDirectory = Path.Combine(Application.StartupPath, "Logs");
-        private static readonly string LogFile = Path.Combine(LogDirectory, $"log_{DateTime.Now:yyyyMMdd}.txt");
 
         static Logger()
         {
-            // Создаем директорию для логов, если её нет
             if (!Directory.Exists(LogDirectory))
-            {
                 Directory.CreateDirectory(LogDirectory);
-            }
         }
 
-        /// <summary>
-        /// Записать информационное сообщение
-        /// </summary>
-        public static void Info(string message)
-        {
-            WriteLog("INFO", message);
-        }
+        private static string CurrentLogFile => Path.Combine(LogDirectory, $"log_{DateTime.Now:yyyyMMdd}.txt");
 
-        /// <summary>
-        /// Записать предупреждение
-        /// </summary>
-        public static void Warning(string message)
-        {
-            WriteLog("WARNING", message);
-        }
+        public static void Info(string message) => WriteLog("INFO", message);
 
-        /// <summary>
-        /// Записать ошибку
-        /// </summary>
+        public static void Warning(string message) => WriteLog("WARNING", message);
+
         public static void Error(string message, Exception ex = null)
         {
-            string errorMessage = message;
+            var sb = new StringBuilder(message);
             if (ex != null)
             {
-                errorMessage += $"\nИсключение: {ex.GetType().Name}\nСообщение: {ex.Message}\nСтек вызовов: {ex.StackTrace}";
+                sb.AppendLine();
+                sb.Append($"Исключение: {ex.GetType().Name}. {ex.Message}");
+                if (!string.IsNullOrEmpty(ex.StackTrace))
+                    sb.AppendLine().Append(ex.StackTrace);
             }
-            WriteLog("ERROR", errorMessage);
+            WriteLog("ERROR", sb.ToString());
         }
 
-        /// <summary>
-        /// Записать отладочное сообщение
-        /// </summary>
         public static void Debug(string message)
         {
 #if DEBUG
@@ -64,22 +51,66 @@ namespace WindowsFormsApp1.Utils
         {
             try
             {
-                string logEntry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level}] {message}";
-                
-                using (StreamWriter writer = new StreamWriter(LogFile, true, System.Text.Encoding.UTF8))
+                string entry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{level}] {message.Replace("\r\n", " | ")}";
+                lock (Sync)
                 {
-                    writer.WriteLine(logEntry);
+                    File.AppendAllText(CurrentLogFile, entry + Environment.NewLine, Encoding.UTF8);
                 }
             }
             catch
             {
-                // Игнорируем ошибки записи в лог, чтобы не нарушать работу приложения
+                // не прерываем работу приложения
             }
         }
 
         /// <summary>
-        /// Очистить старые логи (старше указанного количества дней)
+        /// Последние строки журнала (сегодняшний файл, при отсутствии — последний log_*.txt).
         /// </summary>
+        public static string ReadRecentEntries(int maxLines = 500, string levelFilter = null)
+        {
+            try
+            {
+                if (!Directory.Exists(LogDirectory))
+                    return "Папка журналов не найдена.";
+
+                string file = File.Exists(CurrentLogFile)
+                    ? CurrentLogFile
+                    : Directory.GetFiles(LogDirectory, "log_*.txt").OrderBy(f => f).LastOrDefault();
+
+                if (string.IsNullOrEmpty(file) || !File.Exists(file))
+                    return "Журнал пуст. Выполните действия в приложении — записи появятся здесь.";
+
+                string[] lines;
+                lock (Sync)
+                    lines = File.ReadAllLines(file, Encoding.UTF8);
+
+                if (!string.IsNullOrEmpty(levelFilter))
+                    lines = lines.Where(l => l.IndexOf($"[{levelFilter}]", StringComparison.OrdinalIgnoreCase) >= 0).ToArray();
+
+                if (lines.Length == 0)
+                    return "Нет записей для выбранного уровня.";
+
+                int start = Math.Max(0, lines.Length - maxLines);
+                var sb = new StringBuilder();
+                sb.AppendLine($"Файл: {Path.GetFileName(file)}");
+                sb.AppendLine(new string('─', 60));
+                for (int i = start; i < lines.Length; i++)
+                    sb.AppendLine(lines[i]);
+                return sb.ToString();
+            }
+            catch (Exception ex)
+            {
+                return "Ошибка чтения журнала: " + ex.Message;
+            }
+        }
+
+        public static void OpenLogFolder()
+        {
+            if (!Directory.Exists(LogDirectory))
+                Directory.CreateDirectory(LogDirectory);
+            Process.Start("explorer.exe", LogDirectory);
+        }
+
         public static void CleanOldLogs(int daysToKeep = 30)
         {
             try
@@ -87,22 +118,17 @@ namespace WindowsFormsApp1.Utils
                 if (!Directory.Exists(LogDirectory))
                     return;
 
-                DateTime cutoffDate = DateTime.Now.AddDays(-daysToKeep);
-                
+                DateTime cutoff = DateTime.Now.AddDays(-daysToKeep);
                 foreach (string file in Directory.GetFiles(LogDirectory, "log_*.txt"))
                 {
-                    FileInfo fileInfo = new FileInfo(file);
-                    if (fileInfo.CreationTime < cutoffDate)
-                    {
+                    if (File.GetLastWriteTime(file) < cutoff)
                         File.Delete(file);
-                    }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Игнорируем ошибки очистки
+                WriteLog("WARNING", "Не удалось очистить старые журналы: " + ex.Message);
             }
         }
     }
 }
-

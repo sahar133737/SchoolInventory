@@ -64,6 +64,22 @@ namespace WindowsFormsApp1.Utils
             return date >= new DateTime(1900, 1, 1) && date <= DateTime.Now.AddYears(10);
         }
 
+        /// <summary>Дата распоряжения: не в будущем.</summary>
+        public static bool IsValidDispositionDate(DateTime date)
+        {
+            return date.Date >= new DateTime(1990, 1, 1) && date.Date <= DateTime.Today;
+        }
+
+        /// <summary>Номер распоряжения / акта.</summary>
+        public static bool IsValidDocumentNumber(string documentNumber)
+        {
+            if (string.IsNullOrWhiteSpace(documentNumber))
+                return false;
+            if (documentNumber.Length > 50)
+                return false;
+            return Regex.IsMatch(documentNumber.Trim(), @"^[A-Za-zА-Яа-яЁё0-9\-/_]+$");
+        }
+
         /// <summary>
         /// Очистка строки от лишних пробелов
         /// </summary>

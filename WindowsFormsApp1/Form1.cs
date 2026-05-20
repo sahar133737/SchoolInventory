@@ -8,6 +8,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using WindowsFormsApp1.Services;
+using WindowsFormsApp1.UI;
 using WindowsFormsApp1.Utils;
 
 namespace WindowsFormsApp1
@@ -16,11 +18,20 @@ namespace WindowsFormsApp1
     {
         private InventoryManager inventoryManager = new InventoryManager();
         private DataTable inventoryTable;
-			private Image photoPlaceholder64;
         private string loggedInUsername;
         private string loggedInFullName;
         private string loggedInRole;
         private Label lblUserInfo;
+        private InventoryFilterPanel inventoryFilterPanel;
+        private TabPage tabClassrooms;
+        private TabPage tabResponsible;
+        private TabPage tabJournal;
+        private MovementsForm movementsForm;
+        private ClassroomsForm classroomsForm;
+        private ResponsiblePersonsForm responsiblePersonsForm;
+        private SystemLogForm systemLogForm;
+        private TabPage tabPermissions;
+        private RolePermissionsForm rolePermissionsForm;
 
         public Form1() : this("admin", "Администратор", "Admin")
         {
@@ -33,27 +44,57 @@ namespace WindowsFormsApp1
             loggedInRole = role;
             InitializeComponent();
             
-            // Инициализируем форму отчетов
-            reportsForm = new ReportsForm(inventoryManager);
+            reportsForm = new ReportsForm(inventoryManager, loggedInFullName, loggedInRole);
             tabReports.Controls.Add(reportsForm);
             reportsForm.Dock = DockStyle.Fill;
-            
-            // Инициализируем форму статистики
-            statisticsForm = new StatisticsForm(inventoryManager);
+
+            SetupInventoryTabLayout();
+
+            try { new MovementManager().EnsureSchema(); } catch { /* БД может быть недоступна при дизайне */ }
+
+            movementsForm = new MovementsForm(inventoryManager, loggedInFullName, loggedInRole);
+            tabAssetDisposition.Controls.Add(movementsForm);
+            movementsForm.Dock = DockStyle.Fill;
+            tabAssetDisposition.BackColor = AppTheme.Background;
+            movementsForm.LoadData();
+
+            statisticsForm = new StatisticsForm(inventoryManager, loggedInRole);
             tabStatistics.Controls.Add(statisticsForm);
             statisticsForm.Dock = DockStyle.Fill;
-            
-            // Инициализируем форму управления пользователями (только для админа)
+
             userManagementForm = new UserManagementForm();
-            tabUsers.Controls.Add(userManagementForm);
             userManagementForm.Dock = DockStyle.Fill;
-            
-            // Инициализируем форму категорий
+            tabUsers.Controls.Clear();
+            tabUsers.Controls.Add(userManagementForm);
+            tabUsers.BackColor = AppTheme.Background;
+
             categoriesForm = new CategoriesForm();
-            tabCategories.Controls.Add(categoriesForm);
             categoriesForm.Dock = DockStyle.Fill;
-            
-            // Настраиваем видимость вкладок в зависимости от роли
+            tabCategories.Controls.Clear();
+            tabCategories.Controls.Add(categoriesForm);
+            tabCategories.BackColor = AppTheme.Background;
+
+            classroomsForm = new ClassroomsForm();
+            tabClassrooms = new TabPage("Кабинеты") { Name = "tabClassrooms", BackColor = AppTheme.Background };
+            tabClassrooms.Controls.Add(classroomsForm);
+            classroomsForm.Dock = DockStyle.Fill;
+
+            responsiblePersonsForm = new ResponsiblePersonsForm();
+            tabResponsible = new TabPage("Ответственные") { Name = "tabResponsible", BackColor = AppTheme.Background };
+            tabResponsible.Controls.Add(responsiblePersonsForm);
+            responsiblePersonsForm.Dock = DockStyle.Fill;
+
+            systemLogForm = new SystemLogForm();
+            tabJournal = new TabPage("Журнал") { Name = "tabJournal", BackColor = AppTheme.Background };
+            tabJournal.Controls.Add(systemLogForm);
+            systemLogForm.Dock = DockStyle.Fill;
+
+            rolePermissionsForm = new RolePermissionsForm();
+            tabPermissions = new TabPage("Права доступа") { Name = "tabPermissions", BackColor = AppTheme.Background };
+            tabPermissions.Controls.Add(rolePermissionsForm);
+            rolePermissionsForm.Dock = DockStyle.Fill;
+            rolePermissionsForm.PermissionsSaved += (s, e) => RefreshAccessRights();
+
             ConfigureTabsForRole();
             
             // Обработка переключения вкладок для ленивой загрузки
@@ -64,16 +105,42 @@ namespace WindowsFormsApp1
             this.KeyDown += Form1_KeyDown;
         }
 
+        private void RefreshAccessRights()
+        {
+            PermissionService.Instance.Reload();
+            ConfigureTabsForRole();
+            ApplyInventoryPermissions();
+            reportsForm?.RefreshPermissions();
+            movementsForm?.RefreshPermissions();
+        }
+
         private void ConfigureTabsForRole()
         {
-            // Скрываем вкладки управления для обычных пользователей
-            if (loggedInRole != "Admin")
+            SetTabVisible(tabInventory, AuthorizationHelper.CanViewInventory(loggedInRole));
+            SetTabVisible(tabAssetDisposition, AuthorizationHelper.CanViewDisposition(loggedInRole));
+            SetTabVisible(tabReports, AuthorizationHelper.CanViewReports(loggedInRole));
+            SetTabVisible(tabStatistics, AuthorizationHelper.CanViewStatistics(loggedInRole));
+            SetTabVisible(tabUsers, AuthorizationHelper.CanManageUsers(loggedInRole));
+            SetTabVisible(tabCategories, AuthorizationHelper.CanManageCategories(loggedInRole));
+            SetTabVisible(tabClassrooms, AuthorizationHelper.CanManageClassrooms(loggedInRole));
+            SetTabVisible(tabResponsible, AuthorizationHelper.CanManageResponsible(loggedInRole));
+            SetTabVisible(tabJournal, AuthorizationHelper.CanViewSystemLog(loggedInRole));
+            SetTabVisible(tabPermissions, AuthorizationHelper.CanManagePermissions(loggedInRole));
+
+            btnGenerateData.Visible = AuthorizationHelper.CanGenerateTestData(loggedInRole);
+        }
+
+        private void SetTabVisible(TabPage tab, bool visible)
+        {
+            if (tab == null) return;
+            if (visible)
             {
-                // Удаляем вкладки для не-админов
-                if (tabMain.TabPages.Contains(tabUsers))
-                    tabMain.TabPages.Remove(tabUsers);
-                if (tabMain.TabPages.Contains(tabCategories))
-                    tabMain.TabPages.Remove(tabCategories);
+                if (!tabMain.TabPages.Contains(tab))
+                    tabMain.TabPages.Add(tab);
+            }
+            else if (tabMain.TabPages.Contains(tab))
+            {
+                tabMain.TabPages.Remove(tab);
             }
         }
 
@@ -84,14 +151,45 @@ namespace WindowsFormsApp1
             {
                 statisticsForm.LoadStatistics();
             }
+            else if (tabMain.SelectedTab == tabReports)
+                reportsForm.EnsureLayout();
+            else if (tabMain.SelectedTab == tabAssetDisposition)
+                movementsForm.LoadData();
             else if (tabMain.SelectedTab == tabUsers)
-            {
                 userManagementForm.LoadUsers();
-            }
             else if (tabMain.SelectedTab == tabCategories)
-            {
                 categoriesForm.LoadCategories();
+            else if (tabMain.SelectedTab == tabClassrooms)
+                classroomsForm.LoadData();
+            else if (tabMain.SelectedTab == tabResponsible)
+                responsiblePersonsForm.LoadData();
+            else if (tabMain.SelectedTab == tabJournal)
+                systemLogForm.LoadLog();
+            else if (tabMain.SelectedTab == tabPermissions)
+                rolePermissionsForm.LoadPermissionsGrid();
+        }
+
+        private void SetupInventoryTabLayout()
+        {
+            inventoryFilterPanel = new InventoryFilterPanel(inventoryManager, FilterPanelLayout.Full) { Dock = DockStyle.Top };
+            inventoryFilterPanel.FilterApplied += (s, e) => LoadInventory();
+
+            var toolbar = new ToolbarPanel();
+            foreach (var btn in new[] { btnRefresh, btnAdd, btnEdit, btnDelete, btnClearSearch, btnGenerateData })
+            {
+                tabInventory.Controls.Remove(btn);
+                toolbar.AddButton(btn, btn == btnAdd);
             }
+            btnClearSearch.Text = "Сбросить фильтр";
+            tabInventory.Controls.Remove(lblSearch);
+            tabInventory.Controls.Remove(txtSearch);
+            tabInventory.Controls.Remove(gridInventory);
+
+            tabInventory.Controls.Add(gridInventory);
+            tabInventory.Controls.Add(toolbar);
+            tabInventory.Controls.Add(inventoryFilterPanel);
+            gridInventory.Dock = DockStyle.Fill;
+            AppTheme.ApplyToDataGridView(gridInventory);
         }
 
         private void Form1_Load(object sender, EventArgs e)
@@ -99,7 +197,9 @@ namespace WindowsFormsApp1
             try
             {
                 Utils.Logger.Info($"Запуск приложения. Пользователь: {loggedInFullName} ({loggedInRole})");
-                ApplyModernStyling();
+                Utils.Logger.CleanOldLogs(30);
+                ApplyAppTheme();
+                ApplyInventoryPermissions();
                 LoadInventory();
             }
             catch (Exception ex)
@@ -109,63 +209,30 @@ namespace WindowsFormsApp1
             }
         }
 
-        private void ApplyModernStyling()
+        private void ApplyInventoryPermissions()
         {
-            // Применяем неоморфный стиль к форме
-            NeomorphicStyle.ApplyNeomorphicStyle(this);
-            this.BackColor = NeomorphicStyle.BackgroundColor;
-            tabInventory.BackColor = NeomorphicStyle.BackgroundColor;
-            tabReports.BackColor = NeomorphicStyle.BackgroundColor;
-            
-            // Стилизация кнопок в неоморфном стиле
-            ApplyNeomorphicButton(btnAdd);
-            ApplyNeomorphicButton(btnEdit);
-            ApplyNeomorphicButton(btnDelete);
-            ApplyNeomorphicButton(btnRefresh);
-            ApplyNeomorphicButton(btnClearSearch);
-            ApplyNeomorphicButton(btnGenerateData);
+            btnAdd.Enabled = AuthorizationHelper.CanEditInventory(loggedInRole);
+            btnEdit.Enabled = AuthorizationHelper.CanEditInventory(loggedInRole);
+            btnDelete.Enabled = AuthorizationHelper.CanDeleteInventory(loggedInRole);
+        }
 
-            // Стилизация текстового поля поиска - создаем неоморфный контейнер
-            CreateNeomorphicSearchBox();
-
-            // Стилизация DataGridView в неоморфном стиле
-            gridInventory.BackgroundColor = NeomorphicStyle.BackgroundColor;
-            gridInventory.BorderStyle = BorderStyle.None;
-            gridInventory.GridColor = Color.FromArgb(NeomorphicStyle.DarkShadow.R, NeomorphicStyle.DarkShadow.G, NeomorphicStyle.DarkShadow.B);
-            gridInventory.DefaultCellStyle.Font = new Font("Segoe UI", 9F);
-            gridInventory.DefaultCellStyle.BackColor = NeomorphicStyle.SurfaceColor;
-            gridInventory.DefaultCellStyle.ForeColor = NeomorphicStyle.TextColor;
-            gridInventory.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(35, 35, 45);
-            gridInventory.ColumnHeadersDefaultCellStyle.BackColor = NeomorphicStyle.SurfaceColor;
-            gridInventory.ColumnHeadersDefaultCellStyle.ForeColor = NeomorphicStyle.TextColor;
-            gridInventory.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
-            gridInventory.ColumnHeadersDefaultCellStyle.SelectionBackColor = NeomorphicStyle.SurfaceColor;
-            gridInventory.RowHeadersDefaultCellStyle.BackColor = NeomorphicStyle.SurfaceColor;
-            gridInventory.EnableHeadersVisualStyles = false;
-            gridInventory.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            gridInventory.DefaultCellStyle.SelectionBackColor = NeomorphicStyle.AccentColor;
-            gridInventory.DefaultCellStyle.SelectionForeColor = Color.White;
-            gridInventory.AllowUserToAddRows = false;
-            gridInventory.AllowUserToDeleteRows = false;
-            
-            // Добавляем неоморфную панель вокруг DataGridView
-            CreateNeomorphicGridPanel();
-
-            // Стилизация TabControl в неоморфном стиле
-            tabMain.Font = new Font("Segoe UI", 10F);
-            tabMain.DrawMode = TabDrawMode.OwnerDrawFixed;
-            tabMain.DrawItem += TabMain_DrawItemNeomorphic;
-
-            // Стилизация StatusStrip
-            statusStrip1.BackColor = NeomorphicStyle.SurfaceColor;
-            statusStrip1.Font = new Font("Segoe UI", 9F);
-            toolStripStatusLabelCount.ForeColor = NeomorphicStyle.TextColor;
-
-            // Стилизация Label
-            lblSearch.ForeColor = NeomorphicStyle.TextColor;
-            lblSearch.Font = new Font("Segoe UI", 10F);
-
-            // Добавляем информацию о пользователе
+        private void ApplyAppTheme()
+        {
+            AppTheme.ApplyToForm(this);
+            tabMain.BackColor = AppTheme.Background;
+            tabInventory.BackColor = AppTheme.Background;
+            tabAssetDisposition.BackColor = AppTheme.Background;
+            tabReports.BackColor = AppTheme.Background;
+            tabStatistics.BackColor = AppTheme.Background;
+            tabUsers.BackColor = AppTheme.Background;
+            tabCategories.BackColor = AppTheme.Background;
+            if (tabClassrooms != null) tabClassrooms.BackColor = AppTheme.Background;
+            if (tabResponsible != null) tabResponsible.BackColor = AppTheme.Background;
+            if (tabJournal != null) tabJournal.BackColor = AppTheme.Background;
+            AppTheme.ApplyToTabControl(tabMain);
+            statusStrip1.BackColor = AppTheme.Surface;
+            statusStrip1.ForeColor = AppTheme.TextPrimary;
+            toolStripStatusLabelCount.ForeColor = AppTheme.TextSecondary;
             AddUserInfoLabel();
         }
 
@@ -420,7 +487,7 @@ namespace WindowsFormsApp1
             lblUserInfo = new Label();
             lblUserInfo.AutoSize = true;
             lblUserInfo.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
-            lblUserInfo.ForeColor = NeomorphicStyle.TextColor;
+            lblUserInfo.ForeColor = AppTheme.TextSecondary;
             lblUserInfo.Text = $"Пользователь: {loggedInFullName} ({loggedInRole})";
             lblUserInfo.Location = new Point(10, 5);
             statusStrip1.Items.Add(new ToolStripControlHost(lblUserInfo));
@@ -431,10 +498,12 @@ namespace WindowsFormsApp1
             try
             {
                 Utils.Logger.Debug("Загрузка данных инвентаря");
-                inventoryTable = inventoryManager.GetAllInventory();
+                var criteria = inventoryFilterPanel?.GetCriteria();
+                inventoryTable = criteria != null && criteria.HasActiveFilters
+                    ? inventoryManager.GetFilteredInventory(criteria)
+                    : inventoryManager.GetAllInventory();
                 gridInventory.DataSource = inventoryTable;
-                ConfigureGridColumns();
-                gridInventory.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(50, 50, 60);
+                GridHelper.LocalizeInventoryGrid(gridInventory);
                 UpdateStatusCount();
                 Utils.Logger.Info($"Загружено записей инвентаря: {inventoryTable.Rows.Count}");
             }
@@ -460,6 +529,8 @@ namespace WindowsFormsApp1
 
         private void btnAdd_Click(object sender, EventArgs e)
         {
+            if (!AuthorizationHelper.EnsureAuthorized(AuthorizationHelper.CanEditInventory(loggedInRole), this, "добавление инвентаря"))
+                return;
             try
             {
                 Utils.Logger.Info("Открытие диалога добавления инвентаря");
@@ -481,6 +552,8 @@ namespace WindowsFormsApp1
 
         private void btnEdit_Click(object sender, EventArgs e)
         {
+            if (!AuthorizationHelper.EnsureAuthorized(AuthorizationHelper.CanEditInventory(loggedInRole), this, "изменение инвентаря"))
+                return;
             int? id = GetSelectedInventoryId();
             if (id == null) return;
             using (var dlg = new InventoryEditDialog(inventoryManager, id.Value))
@@ -494,6 +567,8 @@ namespace WindowsFormsApp1
 
         private void btnDelete_Click(object sender, EventArgs e)
         {
+            if (!AuthorizationHelper.EnsureAuthorized(AuthorizationHelper.CanDeleteInventory(loggedInRole), this, "удаление записей инвентаря"))
+                return;
             int? id = GetSelectedInventoryId();
             if (id == null) return;
             if (MessageBox.Show("Удалить выбранную запись?", "Подтверждение", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
@@ -555,13 +630,7 @@ namespace WindowsFormsApp1
 
         private void txtSearch_TextChanged(object sender, EventArgs e)
         {
-            if (inventoryTable == null) return;
-            string text = txtSearch.Text.Replace("'", "''");
-            if (string.IsNullOrWhiteSpace(text))
-                inventoryTable.DefaultView.RowFilter = string.Empty;
-            else
-                inventoryTable.DefaultView.RowFilter = $"ItemName LIKE '%{text}%' OR Description LIKE '%{text}%'";
-            UpdateStatusCount();
+            LoadInventory();
         }
 
         private void gridInventory_CellDoubleClick(object sender, DataGridViewCellEventArgs e)
@@ -592,47 +661,7 @@ namespace WindowsFormsApp1
 
         private void btnClearSearch_Click(object sender, EventArgs e)
         {
-            txtSearch.Text = string.Empty;
-        }
-
-
-        private void ConfigureGridColumns()
-        {
-            if (gridInventory.Columns.Contains("InventoryID"))
-            {
-                gridInventory.Columns["InventoryID"].HeaderText = "ID";
-                // Скрываем колонку ID из отображения, оставляя её в данных для выбора/редактирования
-                gridInventory.Columns["InventoryID"].Visible = false;
-            }
-            // удалены все фото-колонки
-            if (gridInventory.Columns.Contains("ItemName")) gridInventory.Columns["ItemName"].HeaderText = "Наименование";
-            if (gridInventory.Columns.Contains("Description")) gridInventory.Columns["Description"].HeaderText = "Описание";
-            if (gridInventory.Columns.Contains("CategoryName")) gridInventory.Columns["CategoryName"].HeaderText = "Категория";
-            if (gridInventory.Columns.Contains("Classroom")) gridInventory.Columns["Classroom"].HeaderText = "Кабинет";
-            if (gridInventory.Columns.Contains("ResponsiblePerson")) gridInventory.Columns["ResponsiblePerson"].HeaderText = "Ответственный";
-            if (gridInventory.Columns.Contains("InventoryNumber")) gridInventory.Columns["InventoryNumber"].HeaderText = "Инв. номер";
-            if (gridInventory.Columns.Contains("PurchaseDate"))
-            {
-                gridInventory.Columns["PurchaseDate"].HeaderText = "Дата покупки";
-                gridInventory.Columns["PurchaseDate"].DefaultCellStyle.Format = "d";
-            }
-            if (gridInventory.Columns.Contains("PurchasePrice"))
-            {
-                gridInventory.Columns["PurchasePrice"].HeaderText = "Цена";
-                gridInventory.Columns["PurchasePrice"].DefaultCellStyle.Format = "N2";
-                gridInventory.Columns["PurchasePrice"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
-            }
-            if (gridInventory.Columns.Contains("CurrentState")) gridInventory.Columns["CurrentState"].HeaderText = "Состояние";
-            if (gridInventory.Columns.Contains("Status")) gridInventory.Columns["Status"].HeaderText = "Статус";
-
-            // желаемый порядок
-            string[] order = { "ItemName", "CategoryName", "InventoryNumber", "Classroom", "ResponsiblePerson", "PurchaseDate", "PurchasePrice", "CurrentState", "Status", "Description" };
-            int index = 0;
-            foreach (var name in order)
-            {
-                if (gridInventory.Columns.Contains(name))
-                    gridInventory.Columns[name].DisplayIndex = index++;
-            }
+            inventoryFilterPanel?.ResetFilters();
         }
 
         private void UpdateStatusCount()
@@ -663,6 +692,8 @@ namespace WindowsFormsApp1
                     context = HelpContext.Reports;
                 else if (tabMain.SelectedTab == tabStatistics)
                     context = HelpContext.Statistics;
+                else if (tabMain.SelectedTab == tabAssetDisposition)
+                    context = HelpContext.Inventory;
                 else if (tabMain.SelectedTab == tabUsers)
                     context = HelpContext.UserManagement;
                 else if (tabMain.SelectedTab == tabCategories)
@@ -680,12 +711,8 @@ namespace WindowsFormsApp1
         {
             try
             {
-                if (loggedInRole != "Admin")
-                {
-                    MessageBox.Show("Генерация тестовых данных доступна только для администраторов.", 
-                        "Доступ запрещен", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                if (!AuthorizationHelper.EnsureAuthorized(AuthorizationHelper.CanGenerateTestData(loggedInRole), this, "генерация тестовых данных"))
                     return;
-                }
 
                 using (TestDataForm testDataForm = new TestDataForm())
                 {
