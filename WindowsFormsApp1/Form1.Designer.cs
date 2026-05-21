@@ -217,7 +217,7 @@
             this.btnGenerateData.Name = "btnGenerateData";
             this.btnGenerateData.Size = new System.Drawing.Size(180, 35);
             this.btnGenerateData.TabIndex = 8;
-            this.btnGenerateData.Text = "🔧 Тестовые данные";
+            this.btnGenerateData.Text = "Заполнить базу";
             this.btnGenerateData.UseVisualStyleBackColor = true;
             this.btnGenerateData.Click += new System.EventHandler(this.btnGenerateData_Click);
             // 

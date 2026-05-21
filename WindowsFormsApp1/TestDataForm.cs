@@ -36,7 +36,7 @@ namespace WindowsFormsApp1
             panelMain.BackColor = NeomorphicStyle.BackgroundColor;
 
             // Title
-            lblTitle.Text = "🔧 Генерация тестовых данных";
+            lblTitle.Text = "Заполнение базы учётными данными";
             lblTitle.Font = new Font("Segoe UI", 16F, FontStyle.Bold);
             lblTitle.ForeColor = NeomorphicStyle.AccentColor;
             lblTitle.Location = new Point(30, 30);
@@ -44,13 +44,12 @@ namespace WindowsFormsApp1
 
             // Info label
             var lblInfo = new Label();
-            lblInfo.Text = "Эта функция создаст по 100 записей в каждую таблицу базы данных:\n\n" +
-                          "• Пользователи\n" +
-                          "• Категории\n" +
-                          "• Кабинеты\n" +
-                          "• Ответственные лица\n" +
-                          "• Инвентарь\n\n" +
-                          "⚠️ ВНИМАНИЕ: Если данные уже существуют, дубликаты будут пропущены.";
+            lblInfo.Text = "Будут добавлены реалистичные данные школьного инвентаря:\n\n" +
+                          "• Пользователи (ФИО, логины вида ivanova.e)\n" +
+                          "• Категории и кабинеты\n" +
+                          "• Ответственные лица (педагоги)\n" +
+                          "• До 100 карточек имущества с инв. номерами ОС-ГГГГ-…\n\n" +
+                          "Если запись уже есть в базе, она будет пропущена.";
             lblInfo.Font = new Font("Segoe UI", 10F);
             lblInfo.ForeColor = NeomorphicStyle.TextColor;
             lblInfo.Location = new Point(30, 80);
@@ -58,7 +57,7 @@ namespace WindowsFormsApp1
             lblInfo.AutoSize = false;
 
             // Button
-            btnGenerate.Text = "🚀 Начать генерацию";
+            btnGenerate.Text = "Начать заполнение";
             btnGenerate.Location = new Point(30, 250);
             btnGenerate.Size = new Size(300, 50);
             btnGenerate.Font = new Font("Segoe UI", 12F, FontStyle.Bold);
@@ -73,7 +72,7 @@ namespace WindowsFormsApp1
             progressBar.Value = 0;
 
             // Status label
-            lblStatus.Text = "Готов к генерации";
+            lblStatus.Text = "Готов к заполнению";
             lblStatus.Font = new Font("Segoe UI", 10F);
             lblStatus.ForeColor = NeomorphicStyle.TextColor;
             lblStatus.Location = new Point(30, 360);
@@ -93,7 +92,7 @@ namespace WindowsFormsApp1
             this.ClientSize = new Size(600, 450);
             this.FormBorderStyle = FormBorderStyle.None;
             this.StartPosition = FormStartPosition.CenterScreen;
-            this.Text = "Генерация тестовых данных";
+            this.Text = "Заполнение базы данными";
             this.KeyPreview = true;
             this.KeyDown += (s, e) => { if (e.KeyCode == Keys.Escape) this.Close(); };
 
@@ -165,9 +164,9 @@ namespace WindowsFormsApp1
                 return;
 
             if (MessageBox.Show(
-                "Вы уверены, что хотите сгенерировать тестовые данные?\n\n" +
-                "Будет создано по 100 записей в каждую таблицу.\n" +
-                "Процесс может занять некоторое время.",
+                "Заполнить базу учётными данными?\n\n" +
+                "Будут добавлены пользователи, кабинеты, категории и карточки имущества.\n" +
+                "Процесс может занять несколько минут.",
                 "Подтверждение",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Question) != DialogResult.Yes)
@@ -177,9 +176,9 @@ namespace WindowsFormsApp1
 
             isGenerating = true;
             btnGenerate.Enabled = false;
-            btnGenerate.Text = "⏳ Генерация...";
+            btnGenerate.Text = "Выполняется…";
             progressBar.Value = 0;
-            lblStatus.Text = "Начало генерации...";
+            lblStatus.Text = "Заполнение базы…";
 
             try
             {
@@ -214,10 +213,11 @@ namespace WindowsFormsApp1
                         {
                             btnGenerate.Enabled = true;
                             btnGenerate.Text = "✅ Готово!";
-                            lblStatus.Text = "Генерация завершена успешно!";
+                            lblStatus.Text = "Заполнение завершено.";
                             progressBar.Value = 100;
-                            MessageBox.Show("Тестовые данные успешно сгенерированы!\n\n• 100 пользователей\n• 100 категорий\n• 100 кабинетов\n• 100 ответственных лиц\n• 100 записей инвентаря", 
-                                "Успех", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            MessageBox.Show("База успешно дополнена учётными данными.\n\n" +
+                                "Добавлены пользователи, категории, кабинеты, ответственные лица и карточки имущества.",
+                                "Готово", MessageBoxButtons.OK, MessageBoxIcon.Information);
                         }));
                     }
                     catch (Exception ex)
@@ -226,7 +226,7 @@ namespace WindowsFormsApp1
                         this.Invoke(new Action(() =>
                         {
                             btnGenerate.Enabled = true;
-                            btnGenerate.Text = "🚀 Начать генерацию";
+                            btnGenerate.Text = "Начать заполнение";
                             lblStatus.Text = $"Ошибка: {ex.Message}";
                             MessageBox.Show($"Ошибка генерации данных: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         }));
@@ -248,7 +248,7 @@ namespace WindowsFormsApp1
                 MessageBox.Show($"Ошибка: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 isGenerating = false;
                 btnGenerate.Enabled = true;
-                btnGenerate.Text = "🚀 Начать генерацию";
+                btnGenerate.Text = "Начать заполнение";
             }
         }
 

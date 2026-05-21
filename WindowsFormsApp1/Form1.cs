@@ -711,7 +711,7 @@ namespace WindowsFormsApp1
         {
             try
             {
-                if (!AuthorizationHelper.EnsureAuthorized(AuthorizationHelper.CanGenerateTestData(loggedInRole), this, "генерация тестовых данных"))
+                if (!AuthorizationHelper.EnsureAuthorized(AuthorizationHelper.CanGenerateTestData(loggedInRole), this, "заполнение базы учётными данными"))
                     return;
 
                 using (TestDataForm testDataForm = new TestDataForm())

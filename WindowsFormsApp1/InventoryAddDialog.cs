@@ -165,34 +165,6 @@ namespace WindowsFormsApp1
 			}
 		}
 
-		private void BtnLoadPhoto_Click(object sender, EventArgs e)
-		{
-			using (OpenFileDialog openDialog = new OpenFileDialog())
-			{
-				openDialog.Filter = "Изображения (*.jpg;*.jpeg;*.png;*.bmp;*.gif)|*.jpg;*.jpeg;*.png;*.bmp;*.gif|Все файлы (*.*)|*.*";
-				openDialog.Title = "Выберите фотографию";
-
-				if (openDialog.ShowDialog() == DialogResult.OK)
-				{
-					try
-					{
-						photoPath = openDialog.FileName;
-						pictureBox.Image = Image.FromFile(photoPath);
-					}
-					catch (Exception ex)
-					{
-						MessageBox.Show($"Ошибка загрузки изображения: {ex.Message}", "Ошибка", MessageBoxButtons.OK, MessageBoxIcon.Error);
-					}
-				}
-			}
-		}
-
-		private void BtnRemovePhoto_Click(object sender, EventArgs e)
-		{
-			photoPath = null;
-			pictureBox.Image = null;
-		}
-
 		private void InventoryAddDialog_KeyDown(object sender, KeyEventArgs e)
 		{
 			if (e.KeyCode == Keys.F1)
@@ -205,8 +177,6 @@ namespace WindowsFormsApp1
 			}
 		}
 
-		private string photoPath;
-		private PictureBox pictureBox;
 	}
 }
 

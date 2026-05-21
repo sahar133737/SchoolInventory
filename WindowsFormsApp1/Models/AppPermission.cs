@@ -62,7 +62,7 @@ namespace WindowsFormsApp1.Models
                 case ClassroomsManage: return "Управление кабинетами";
                 case ResponsibleManage: return "Управление ответственными";
                 case SystemLogView: return "Просмотр журнала системы";
-                case SystemTestData: return "Генерация тестовых данных";
+                case SystemTestData: return "Заполнение базы учётными данными";
                 case PermissionsManage: return "Управление правами ролей";
                 default: return code;
             }
