@@ -56,7 +56,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="PdfSharp">
-      <HintPath>packages\PDFsharp.1.50.5147\lib\net20\PdfSharp.dll</HintPath>
+      <HintPath>lib\PdfSharp.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -181,7 +182,13 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="packages.config" />
     <None Include="App.config" />
+    <None Include="App.config.example" />
+    <Content Include="lib\PdfSharp.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <None Include="lib\README.txt" />
     <None Include="Database\CreateDatabase.sql">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

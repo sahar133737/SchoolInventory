@@ -570,7 +570,9 @@ namespace WindowsFormsApp1
                 }
                 else
                 {
-                    MessageBox.Show("Неверное имя пользователя или пароль.", "Ошибка авторизации", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(
+                        "Неверное имя пользователя или пароль.\n\nЕсли база только что установлена, попробуйте admin / admin.",
+                        "Ошибка авторизации", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     txtPassword.Clear();
                     txtUsername.Focus();
                 }

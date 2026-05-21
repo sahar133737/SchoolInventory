@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  Скопируйте нужную строку подключения в App.config (секция connectionStrings)
+  или отредактируйте WindowsFormsApp1.exe.config рядом с программой на целевом ПК.
+
+  Примеры Server:
+    localhost              — экземпляр по умолчанию на этом компьютере
+    .\SQLEXPRESS           — SQL Server Express
+    ИМЯ_КОМПЬЮТЕРА\ЭКЗЕМПЛЯР — именованный экземпляр (как на машине разработки)
+-->
+<configuration>
+    <connectionStrings>
+        <add name="DefaultConnection"
+             connectionString="Server=localhost;Database=SchoolInventoryDB;Integrated Security=true;" />
+        <!-- connectionString="Server=.\SQLEXPRESS;Database=SchoolInventoryDB;Integrated Security=true;" /> -->
+        <!-- connectionString="Server=SAHAR\SQLSERVER;Database=SchoolInventoryDB;Integrated Security=true;" /> -->
+    </connectionStrings>
+</configuration>

@@ -393,6 +393,13 @@ namespace WindowsFormsApp1
                 object result = db.ExecuteScalar(query, parameters);
                 return result != null && Convert.ToInt32(result) > 0;
             }
+            catch (SqlException ex) when (ex.Number == 2 || ex.Number == 53 || ex.Number == -1 || ex.Number == 4060)
+            {
+                Logger.Error($"Ошибка подключения к БД при авторизации: {username}", ex);
+                throw new Exception(
+                    "Не удалось подключиться к базе данных. Проверьте, что SQL Server запущен, база SchoolInventoryDB создана, " +
+                    "и в файле WindowsFormsApp1.exe.config указан правильный Server (см. App.config.example).", ex);
+            }
             catch (Exception ex)
             {
                 Logger.Error($"Ошибка авторизации пользователя: {username}", ex);

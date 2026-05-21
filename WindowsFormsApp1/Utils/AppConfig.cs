@@ -6,7 +6,7 @@ namespace WindowsFormsApp1.Utils
     {
         public static string ConnectionString =>
             ConfigurationManager.ConnectionStrings["DefaultConnection"]?.ConnectionString
-            ?? @"Server=.\SQLEXPRESS;Database=SchoolInventoryDB;Integrated Security=true;";
+            ?? @"Server=localhost;Database=SchoolInventoryDB;Integrated Security=true;";
 
         public static string GetSetting(string key, string defaultValue = "") =>
             string.IsNullOrEmpty(ConfigurationManager.AppSettings[key])
